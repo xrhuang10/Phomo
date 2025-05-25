@@ -12,7 +12,7 @@ events_table = dynamodb.Table("Events")
 def lambda_handler(event, context):
     try:
         # Step 1: Simulate creator
-        user_id = "test-user-123"  # eventually from Cognito
+        user_id = "test-user-122"  # eventually from Cognito
         # Step 2: Parse input
         body = json.loads(event["body"])
         event_name = body.get("name")
@@ -52,7 +52,7 @@ def generate_event_code():
 if __name__ == "__main__":
     fake_event = {
         "body": json.dumps({
-            "name": "Phomo Launch Party"
+            "name": "Phomo Launch Party!"
         })
     }
     print(lambda_handler(fake_event, None))
