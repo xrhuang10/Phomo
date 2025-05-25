@@ -15,7 +15,7 @@ BUCKET_NAME = "phomo-photos-storage"
 
 def lambda_handler(event, context):
     try:
-        user_id = "test-user-123"
+        user_id = "test-user-1"
 
         # Step 1: Get the user's active event
         user = users_table.get_item(Key={"user_id": user_id}).get("Item")

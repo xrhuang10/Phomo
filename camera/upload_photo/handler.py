@@ -13,7 +13,7 @@ BUCKET_NAME = "phomo-photos-storage"
 
 def lambda_handler(event, context):
     try:
-        user_id = "test-user-123"  # replace with Cognito later
+        user_id = "test-user-1"  # replace with Cognito later
         body = json.loads(event["body"])
 
         # Simulate getting image (in real app, this is base64-encoded)

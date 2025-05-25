@@ -9,7 +9,7 @@ users_table = dynamodb.Table("Users")
 
 def lambda_handler(event, context):
     try:
-        user_id = "test-user-123"  # Replace with Cognito later
+        user_id = "test-user-1"  # Replace with Cognito later
 
         # Get user's active event
         user = users_table.get_item(Key={"user_id": user_id}).get("Item")
@@ -33,3 +33,12 @@ def lambda_handler(event, context):
 
     except Exception as e:
         return error(str(e))
+    
+
+
+if __name__ == "__main__":
+    fake_event = {
+        "body": "{}"
+    }
+    print(lambda_handler(fake_event, None))
+
