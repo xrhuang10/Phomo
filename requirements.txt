@@ -1,1 +1,6 @@
 boto3
+json
+os
+requests
+uuid
+datetime

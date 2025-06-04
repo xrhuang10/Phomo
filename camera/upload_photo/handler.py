@@ -8,7 +8,7 @@ from utils.response import success, error
 dynamodb = boto3.resource("dynamodb")
 s3 = boto3.client("s3")
 photos_table = dynamodb.Table("Photos")
-
+events_table = dynamodb.Table("Events")
 BUCKET_NAME = "phomo-photos-storage"
 
 def lambda_handler(event, context):
@@ -18,10 +18,15 @@ def lambda_handler(event, context):
 
         # Simulate getting image (in real app, this is base64-encoded)
         image_data = body.get("image_data")
-        event_id = body.get("event_id")
+        event_code = body.get("event_code")
 
-        if not image_data or not event_id:
-            return error("Missing image data or event_id.")
+        response = events_table.get_item(Key={"event_code": event_code})
+        event = response.get("Item")
+
+        if not image_data or not event:
+            return error("Missing image data or event not found.")
+
+        event_id = event["event_id"]
 
         photo_id = str(uuid.uuid4())
         timestamp = datetime.now(timezone.utc).isoformat()
