@@ -1,5 +1,6 @@
 import json
 import boto3
+from datetime import datetime, timedelta, timezone
 from utils.response import success, error
 
 dynamodb = boto3.resource("dynamodb")
@@ -8,29 +9,42 @@ events_table = dynamodb.Table("Events")
 
 def lambda_handler(event, context):
     try:
-        user_id = "test-user-123"  # Replace with Cognito later
+        user_id = "test-user-123"  # Replace with Cognito user ID
 
-        # Step 1: Look up the user
+        # Step 1: Fetch user
         user = users_table.get_item(Key={"user_id": user_id}).get("Item")
         if not user or "active_event_id" not in user:
-            print('User not found or no active event')
-            return success({"active_event": None})
-
+            return success({"state": "not_in_event"})
 
         active_event_id = user["active_event_id"]
 
-        # Step 2: Look up the event by scanning Events table for that event_id
-        result = events_table.scan(
-            FilterExpression=boto3.dynamodb.conditions.Attr("event_id").eq(active_event_id)
-        )
-        items = result.get("Items", [])
-        if not items:
-            return success({"active_event": None})
+        # Step 2: Fetch event
+        event = events_table.get_item(Key={"event_code": active_event_id}).get("Item")
+        if not event:
+            return success({"state": "not_in_event"})
 
-        event = items[0]
+
+
+        # Step 3: Determine state
+        expires_at_str = event["expires_at"]
+        expires_at = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        
+        if now < expires_at:
+            state = "in_event"
+        elif now < expires_at + timedelta(hours=24):
+            state = "grace_period"
+        else:
+            # Optional cleanup: remove active_event_id from user
+            users_table.update_item(
+                Key={"user_id": user_id},
+                UpdateExpression="REMOVE active_event_id"
+            )
+            return success({"state": "not_in_event"})
 
         return success({
-            "active_event": {
+            "state": state,
+            "event": {
                 "event_id": event["event_id"],
                 "event_code": event["event_code"],
                 "name": event.get("name"),
