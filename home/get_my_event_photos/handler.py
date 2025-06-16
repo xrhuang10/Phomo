@@ -25,11 +25,22 @@ def lambda_handler(event, context):
 
         photos = result.get("Items", [])
 
-        # Optional: include image URLs only
-        for photo in photos:
-            photo["image_url"] = photo.get("image_url")
+        cleaned_photos = []
 
-        return success({"photos": photos})
+        for photo in photos:
+            if "image_url" in photo and isinstance(photo["image_url"], str):
+                cleaned_photos.append({
+                    "photo_id": photo.get("photo_id"),
+                    "event_id": photo.get("event_id"),
+                    "uploader_id": photo.get("uploader_id"),
+                    "image_url": photo["image_url"],
+                    "timestamp": photo.get("timestamp")
+                })
+
+        # Optional: log for debugging
+        print("Returning cleaned photos:", cleaned_photos)
+
+        return success({"photos": cleaned_photos})
 
     except Exception as e:
         return error(str(e))

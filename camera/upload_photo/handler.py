@@ -7,32 +7,28 @@ from utils.response import success, error
 
 dynamodb = boto3.resource("dynamodb")
 s3 = boto3.client("s3")
+
 photos_table = dynamodb.Table("Photos")
-events_table = dynamodb.Table("Events")
 BUCKET_NAME = "phomo-photos-storage"
 
 def lambda_handler(event, context):
+    print("upload_photo_phomo triggered by:", json.dumps(event))
+
     try:
-        user_id = "test-user-1"  # replace with Cognito later
+        user_id = "test-user-1"  # Replace with Cognito integration later
         body = json.loads(event["body"])
 
-        # Simulate getting image (in real app, this is base64-encoded)
         image_data = body.get("image_data")
-        event_code = body.get("event_code")
+        event_id = body.get("event_id")
 
-        response = events_table.get_item(Key={"event_code": event_code})
-        event = response.get("Item")
-
-        if not image_data or not event:
-            return error("Missing image data or event not found.")
-
-        event_id = event["event_id"]
+        if not image_data or not event_id:
+            return error("Missing image data or event_id.")
 
         photo_id = str(uuid.uuid4())
         timestamp = datetime.now(timezone.utc).isoformat()
         s3_key = f"photos/{event_id}/{photo_id}.jpg"
 
-        # Convert base64 string to bytes
+        # Decode base64 image
         image_bytes = base64.b64decode(image_data)
 
         # Upload to S3
@@ -42,15 +38,12 @@ def lambda_handler(event, context):
             Body=image_bytes,
             ContentType='image/jpeg'
         )
-        
-        # Generate 24-hour signed URL
+
+        # Generate signed download URL (valid for 24h)
         download_url = s3.generate_presigned_url(
             ClientMethod='get_object',
-            Params={
-                'Bucket': BUCKET_NAME,
-                'Key': s3_key
-            },
-            ExpiresIn=86400  # 24 hours in seconds
+            Params={'Bucket': BUCKET_NAME, 'Key': s3_key},
+            ExpiresIn=86400
         )
 
         image_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
@@ -63,9 +56,9 @@ def lambda_handler(event, context):
             "timestamp": timestamp,
             "image_url": image_url
         })
-        
-        print("Uploading photo to event:", event_id)
-        
+
+        print("Photo uploaded to event:", event_id)
+
         return success({
             "message": "Photo uploaded!",
             "photo_id": photo_id,
@@ -74,6 +67,7 @@ def lambda_handler(event, context):
         })
 
     except Exception as e:
+        print("Error occurred:", str(e))
         return error(str(e))
 
 
@@ -84,7 +78,7 @@ if __name__ == "__main__":
     fake_event = {
         "body": json.dumps({
             "image_data": image_data,
-            "event_id": "5e4f786c-82c7-4622-ad32-776283625a76"
+            "event_id": "717dcbec-b252-42fa-8a6a-19623b9b8c56"
         })
     }
 

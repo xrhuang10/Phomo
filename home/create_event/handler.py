@@ -10,6 +10,7 @@ dynamodb = boto3.resource("dynamodb")
 events_table = dynamodb.Table("Events")
 
 def lambda_handler(event, context):
+    print("lambda_triggered")
     try:
         # Step 1: Simulate creator
         user_id = "test-user-1"  # eventually from Cognito
