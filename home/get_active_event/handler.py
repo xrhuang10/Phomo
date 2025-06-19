@@ -18,38 +18,39 @@ def lambda_handler(event, context):
 
         active_event_id = user["active_event_id"]
 
-        # ✅ Step 2: Fetch event using event_id (not event_code)
+        # Step 2: Fetch event
         event = events_table.get_item(Key={"event_id": active_event_id}).get("Item")
         if not event:
             return success({"state": "not_in_event"})
 
-        # ✅ Step 3: Parse timestamps
-        expires_at_str = event["expires_at"]
-        expires_at = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+        # Step 3: Parse end_time
+        end_time_str = event["end_time"]
+        end_time = datetime.fromisoformat(end_time_str.replace("Z", "+00:00"))
         now = datetime.now(timezone.utc)
 
-        # ✅ Step 4: Determine state
-        if now < expires_at:
+        # Step 4: Determine event state
+        if now < end_time:
             state = "in_event"
-        elif now < expires_at + timedelta(hours=24):
+        elif now < end_time + timedelta(hours=24):
             state = "grace_period"
         else:
-            # Remove expired state
+            # Clear expired event from user
             users_table.update_item(
                 Key={"user_id": user_id},
                 UpdateExpression="REMOVE active_event_id"
             )
             return success({"state": "not_in_event"})
 
-        # ✅ Step 5: Return result
+        # Step 5: Return event state + metadata
         return success({
             "state": state,
-            "event": {
-                "event_id": event["event_id"],
-                "event_code": event["event_code"],
-                "name": event.get("name"),
-                "expires_at": event["expires_at"]
-            }
+            "event_id": event["event_id"],
+            "event_code": event["event_code"],
+            "event_name": event["event_name"],
+            "start_time": event["start_time"],
+            "end_time": event["end_time"],
+            "cover_photo": event.get("cover_photo", ""),
+            "created_by": event["created_by"]
         })
 
     except Exception as e:
