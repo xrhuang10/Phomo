@@ -29,7 +29,7 @@ def lambda_handler(event, context):
         for item in participation_items:
             events.append({
                 "event_id": item["event_id"],
-                "event_cover_photo": item.get("event_cover_photo", ""),  # user-chosen timeline photo
+                "event_timeline_photo": item.get("event_timeline_photo", ""),  # user-chosen timeline photo
                 "host": item.get("host", False),
                 "joined_at": item.get("joined_at", "")
             })
@@ -47,7 +47,7 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     fake_event = {
         "body": json.dumps({
-            "user_id": "test-user-id"
+            "user_id": "testuser"
         })
     }
     print(lambda_handler(fake_event, None))
