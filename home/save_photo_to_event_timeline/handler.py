@@ -14,6 +14,7 @@ def lambda_handler(event, context):
         user_id = body.get('user_id')
         event_id = body.get('event_id')
         photo_id = body.get('photo_id')
+        event_name = body.get('event_name') 
 
         if not user_id or not event_id or not photo_id:
             return error("Missing user_id, event_id, or photo_id.")
@@ -45,11 +46,19 @@ def lambda_handler(event, context):
         if photo_item["event_id"] != event_id:
             return error("Photo does not belong to this event.")
 
-        # 4️⃣ Update timeline photo
+        # 4️⃣ Update timeline photo and event name
+        update_expression = "SET event_timeline_photo = :p"
+        expression_values = {":p": photo_id}
+        
+        # Add event_name to update if provided
+        if event_name:
+            update_expression += ", event_name = :n"
+            expression_values[":n"] = event_name
+
         participation_table.update_item(
             Key={"user_id": user_id, "event_id": event_id},
-            UpdateExpression="SET event_timeline_photo = :p",
-            ExpressionAttributeValues={":p": photo_id}
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_values
         )
 
         return success({"message": "Timeline photo saved successfully."})
@@ -64,7 +73,8 @@ if __name__ == "__main__":
         "body": json.dumps({
             "user_id": "test-user-uuid",
             "event_id": "test-event-uuid",
-            "photo_id": "test-photo-uuid"
+            "photo_id": "test-photo-uuid",
+            "event_name": "Test Event Name"  # Add event_name to test
         })
     }
     print(lambda_handler(fake_event, None))

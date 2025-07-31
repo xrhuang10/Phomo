@@ -31,7 +31,8 @@ def lambda_handler(event, context):
                 "event_id": item["event_id"],
                 "event_timeline_photo": item.get("event_timeline_photo", ""),  # user-chosen timeline photo
                 "host": item.get("host", False),
-                "joined_at": item.get("joined_at", "")
+                "joined_at": item.get("joined_at", ""),
+                "event_name": item.get("event_name", "")
             })
 
         # Step 3: Sort events by joined_at descending
